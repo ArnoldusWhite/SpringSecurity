@@ -15,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.training.springsecurity.security.ApplicationUserRole.*;
 
 @Configuration
@@ -36,19 +38,20 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
                 /*.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .and()   Recommanded to be use if we build a service accessible by a user browser*/
                 .csrf().disable()
-                .authorizeHttpRequests()
-                .antMatchers("/","index","/css/*","/js/*")
-                .permitAll()
+                .authorizeRequests()
+                .antMatchers("/","index","/css/*","/js/*").permitAll()
                 .antMatchers("/api/**").hasRole(STUDENT.name())
-                //the order used to define antMatchers matter
-                /*.antMatchers(HttpMethod.DELETE,"/management/api/**").hasAuthority(ApplicationUserPermission.COURSE_WRITE.getPermission())
-                .antMatchers(HttpMethod.POST,"/management/api/**").hasAuthority(ApplicationUserPermission.COURSE_WRITE.getPermission())
-                .antMatchers(HttpMethod.PUT,"/management/api/**").hasAuthority(ApplicationUserPermission.COURSE_WRITE.getPermission())
-                .antMatchers(HttpMethod.GET,"/management/api/**").hasAnyRole(ApplicationUserRole.ADMIN.name(),ApplicationUserRole.TRAINEE.name())*/
                 .anyRequest()
                 .authenticated()
                 .and()
-                .httpBasic();
+                .formLogin() //BasicAuth
+                .loginPage("/login").permitAll()
+                .defaultSuccessUrl("/courses",true)
+                .and()
+                .rememberMe() //default set for 2 weeks
+                .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
+                .key("somethingverysecure"); //key to hash the content ('username/expiration date)
+
     }
 
     @Override
